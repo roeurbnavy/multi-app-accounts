@@ -28,7 +28,7 @@ services:
     environment:
       - PORT=4000
       - ROOT_URL=http://localhost:4000
-      - MONGO_URL=mongodb://mongodb:27017/app-1-db
+      - MONGO_URL=mongodb://mongodb:27017/shared-db
       # Configures DDP to connect to itself locally when running standalone
       - METEOR_SETTINGS={"public":{"remoteServerUrl":"http://localhost:4000"}}
     networks:
@@ -51,7 +51,7 @@ services:
     environment:
       - PORT=3000
       - ROOT_URL=http://localhost:3000
-      - MONGO_URL=mongodb://mongodb:27017/main-db
+      - MONGO_URL=mongodb://mongodb:27017/shared-db
       # Configures DDP to connect to the app-1 container backend
       - METEOR_SETTINGS={"public":{"remoteServerUrl":"http://localhost:4000"}}
     networks:

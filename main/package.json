@@ -2,7 +2,7 @@
   "name": "my-app-meteor-3.x",
   "private": true,
   "scripts": {
-    "start": "meteor run",
+    "start": "MONGO_URL='mongodb://localhost:27017/share-db' meteor run",
     "build": "meteor build ../output/vue --directory",
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",

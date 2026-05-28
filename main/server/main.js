@@ -33,3 +33,18 @@
 //   }
 // });
 import "/imports/api";
+import { Meteor } from "meteor/meteor";
+import { Accounts } from "meteor/accounts-base";
+
+Meteor.startup(async () => {
+  const userCount = await Meteor.users.find().countAsync();
+  if (userCount === 0) {
+    console.log(
+      "No users found in database. Creating default test user: admin/adminadmin",
+    );
+    await Accounts.createUserAsync({
+      username: "admin",
+      password: "123456",
+    });
+  }
+});

@@ -20,3 +20,5 @@ static-html@1.5.0                    # Define static page content in .html files
 
 hot-module-replacement
 rspack
+accounts-base
+accounts-password

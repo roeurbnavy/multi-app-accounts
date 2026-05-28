@@ -4,6 +4,8 @@ import { LinksCollection } from "./links";
 Meteor.methods({
   "api/find": async () => {
     console.log("api/find");
+    const current = Meteor.userId()
+    console.log("current user in app-1: ", current)
     return await LinksCollection.find({}).fetchAsync();
   },
   "api/insert": async (doc) => {

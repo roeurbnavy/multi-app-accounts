@@ -1,10 +1,12 @@
 
+import { Meteor } from "meteor/meteor";
 import { LinksCollection } from "./links";
 
 Meteor.methods({
   'links.find': async () => {
     const data = await LinksCollection.find().fetchAsync()
-
+    const current = Meteor.userId()
+    console.log("current user in main: ", current)
     return data
   },
   'links.findId': async (id) => {

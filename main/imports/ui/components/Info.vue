@@ -1,5 +1,4 @@
 <script setup>
-import { title } from "node:process";
 import { onMounted, ref } from "vue";
 import { getRemoteConnection } from "../utils/ddp";
 
