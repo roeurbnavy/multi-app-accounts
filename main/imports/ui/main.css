@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../../../app-*/imports/**/*.{vue,js,ts,jsx,tsx}";
+
 
 body {
     padding: 10px;

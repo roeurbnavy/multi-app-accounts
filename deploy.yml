@@ -1,0 +1,116 @@
+---
+- name: Build and Deploy Multi-App Accounts Workspace
+  hosts: webservers
+  become: true
+  vars:
+    # Deployment domains & ports
+    host_domain: "main-prod.example.com"
+    remote_domain: "app-1-prod.example.com"
+    host_port: 3000
+    remote_port: 4000
+
+    # URLs
+    host_root_url: "https://{{ host_domain }}"
+    remote_root_url: "https://{{ remote_domain }}"
+    remote_assets_url: "https://{{ remote_domain }}/"
+
+    # Database URLs (Configure production credentials)
+    host_mongo_url: "mongodb://username:password@db-host:27017/main-db"
+    remote_mongo_url: "mongodb://username:password@db-host:27017/app-1-db"
+
+    # Git repository source path on target machine
+    project_dest_path: "/var/www/multi-app-accounts"
+
+  tasks:
+    - name: Ensure required dependencies are installed
+      apt:
+        name:
+          - git
+          - python3-pip
+          - python3-setuptools
+        state: present
+        update_cache: yes
+
+    - name: Install docker python SDK for Ansible modules
+      pip:
+        name: docker
+        state: present
+
+    - name: Ensure target directory exists
+      file:
+        path: "{{ project_dest_path }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Pull latest source code from repository
+      git:
+        repo: 'git@github.com:your-username/multi-app-accounts.git' # UPDATE THIS to your repo
+        dest: "{{ project_dest_path }}"
+        version: main
+        force: yes
+      register: git_pull
+
+    - name: Create docker network for internal communication
+      community.docker.docker_network:
+        name: multi-app-net
+        state: present
+
+    # --- Build and Run app-1 (Remote) ---
+
+    - name: Build Docker image for app-1 (Remote MFE)
+      community.docker.docker_image:
+        build:
+          path: "{{ project_dest_path }}/app-1"
+          args:
+            PUBLIC_PATH: "{{ remote_assets_url }}"
+        name: multi-app-remote
+        source: build
+        force_source: "{{ git_pull.changed }}"
+        state: present
+
+    - name: Run app-1 (Remote MFE) Docker container
+      community.docker.docker_container:
+        name: app1-remote
+        image: multi-app-remote:latest
+        state: started
+        restart_policy: always
+        networks:
+          - name: multi-app-net
+        ports:
+          - "{{ remote_port }}:4000"
+        env:
+          PORT: "4000"
+          ROOT_URL: "{{ remote_root_url }}"
+          MONGO_URL: "{{ remote_mongo_url }}"
+          METEOR_SETTINGS: '{"public":{"remoteServerUrl":"{{ remote_root_url }}"}}'
+
+    # --- Build and Run main (Host) ---
+
+    - name: Build Docker image for main (Host Shell)
+      community.docker.docker_image:
+        build:
+          path: "{{ project_dest_path }}/main"
+          args:
+            REMOTE_APP1_URL: "{{ remote_root_url }}"
+        name: multi-app-host
+        source: build
+        force_source: "{{ git_pull.changed }}"
+        state: present
+
+    - name: Run main (Host Shell) Docker container
+      community.docker.docker_container:
+        name: main-host
+        image: multi-app-host:latest
+        state: started
+        restart_policy: always
+        networks:
+          - name: multi-app-net
+        ports:
+          - "{{ host_port }}:3000"
+        env:
+          PORT: "3000"
+          ROOT_URL: "{{ host_root_url }}"
+          MONGO_URL: "{{ host_mongo_url }}"
+          METEOR_SETTINGS: '{"public":{"remoteServerUrl":"{{ remote_root_url }}"}}'

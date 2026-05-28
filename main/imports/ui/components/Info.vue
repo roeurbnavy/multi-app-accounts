@@ -1,8 +1,9 @@
 <script setup>
 import { title } from "node:process";
 import { onMounted, ref } from "vue";
+import { getRemoteConnection } from "../utils/ddp";
 
-const connection = DDP.connect("http://localhost:3000");
+const connection = getRemoteConnection("app1", 4000);
 
 const links = ref([]);
 const form = ref({
@@ -21,7 +22,8 @@ const addDataRemote = () => {
       if (err) {
         console.log(err);
       } else {
-        console.log(res);
+        // console.log(res);
+        alert("Data inserted successfully");
       }
     },
   );

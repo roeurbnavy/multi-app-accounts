@@ -14,7 +14,19 @@ const {
  *
  * Use these flags to adjust your build settings based on environment.
  */
+// List of remote apps for Module Federation. Add any new remotes here.
+const REMOTES_CONFIG = {
+  app1: { envVar: "REMOTE_APP1_URL", defaultPort: 8081 },
+};
+
 module.exports = defineConfig((Meteor) => {
+  // Generate the remotes object dynamically from the config
+  const remotes = {};
+  for (const [name, config] of Object.entries(REMOTES_CONFIG)) {
+    const url = process.env[config.envVar] || `http://localhost:${config.defaultPort}`;
+    remotes[name] = `${name}@${url}/remoteEntry.js`;
+  }
+
   return {
     ...(Meteor.isClient && {
       output: {
@@ -26,9 +38,7 @@ module.exports = defineConfig((Meteor) => {
         new ModuleFederationPlugin({
           name: "main",
           filename: "remoteEntry.js",
-          remotes: {
-            app1: "app1@http://localhost:8080/remoteEntry.js",
-          },
+          remotes,
           shared: {
             vue: {
               singleton: true,

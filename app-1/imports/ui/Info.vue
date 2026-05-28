@@ -1,14 +1,8 @@
 <script setup>
-import { Meteor } from "meteor/meteor";
-import { DDP } from "meteor/ddp-client";
 import { ref } from "vue";
+import { getRemoteConnection } from "./utils/ddp";
 
-// If this component is loaded in a host shell app (running on a port other than 3000),
-// connect back to the remote server on port 3000 to invoke methods.
-const connection =
-  window.location.port === "3000"
-    ? Meteor
-    : DDP.connect("http://localhost:3000");
+const connection = getRemoteConnection("app1", 4000);
 
 const links = ref([]);
 const fetchData = async () => {
@@ -37,10 +31,10 @@ fetchData();
 <template>
   <h2 class="text-xl my-6 font-semibold">Learn Meteor!</h2>
   <ul class="list-disc underline">
-    <li v-for="link of links" :key="link._id" class="hover:text-green-700">
+    <li v-for="link of links" :key="link._id" class="hover:text-green-700 pb-1">
       <a :href="link.url" target="_blank">{{ link.title }}</a>
       <button
-        class="bg-green-700 hover:bg-green-900 text-white py-2 px-4 rounded"
+        class="bg-green-700 hover:bg-green-900 text-white py-2 px-4 rounded mx-1"
         @click="updateLink(link._id)"
       >
         Update
