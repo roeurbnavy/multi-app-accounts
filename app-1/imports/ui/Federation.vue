@@ -113,7 +113,23 @@ export function getRemoteConnection(remoteName, defaultPort) {
     }
   }
   return connections[remoteName];
-}`
+}`,
+  bestPractices: `// Vue 3 Error Boundary Wrapper & Dynamic Import Blueprint
+import { defineAsyncComponent, ref, onErrorCaptured } from 'vue';
+import { loadRemote } from '@module-federation/enhanced/runtime';
+
+// 1. Dynamic runtime load (no build-time port locking)
+const FederatedComponent = defineAsyncComponent(() => {
+  return loadRemote('app1/router');
+});
+
+// 2. Error Boundary implementation
+const error = ref(null);
+onErrorCaptured((err) => {
+  error.value = err;
+  // Prevent crash from bubbling up to host container
+  return false; 
+});`
 }
 
 const faqs = [
@@ -158,21 +174,26 @@ const faqs = [
     </header>
 
     <!-- Sub-navigation tabs for documentation topics -->
-    <div class="flex border-b border-slate-800 p-1 bg-slate-950/40 rounded-xl max-w-xl mb-8">
+    <div class="flex flex-wrap border-b border-slate-800 p-1 bg-slate-950/40 rounded-xl max-w-3xl mb-8 gap-1">
       <button @click="activeSection = 'core'" 
-              class="flex-1 py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
+              class="flex-1 min-w-[120px] py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
               :class="activeSection === 'core' ? 'bg-indigo-600/30 text-indigo-300 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'">
         Architecture Map
       </button>
       <button @click="activeSection = 'data'" 
-              class="flex-1 py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
+              class="flex-1 min-w-[120px] py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
               :class="activeSection === 'data' ? 'bg-indigo-600/30 text-indigo-300 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'">
         Data & DDP Sync
       </button>
       <button @click="activeSection = 'assets'" 
-              class="flex-1 py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
+              class="flex-1 min-w-[120px] py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
               :class="activeSection === 'assets' ? 'bg-indigo-600/30 text-indigo-300 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'">
         Assets & Troubleshooting
+      </button>
+      <button @click="activeSection = 'recommend'" 
+              class="flex-1 min-w-[120px] py-2.5 text-center text-xs font-bold uppercase rounded-lg transition-all duration-300"
+              :class="activeSection === 'recommend' ? 'bg-indigo-600/30 text-indigo-300 border-b-2 border-indigo-500' : 'text-slate-400 hover:text-slate-200'">
+        Best Practices
       </button>
     </div>
 
@@ -386,6 +407,67 @@ const faqs = [
         </div>
       </div>
 
+      <!-- SECTION 4: Best Practices & Recommendations -->
+      <div v-if="activeSection === 'recommend'" class="space-y-6 animate-fadeIn">
+        <div class="bg-slate-900/40 border border-slate-800/80 p-6 md:p-8 rounded-2xl">
+          <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+            Federated Architecture Best Practices
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed mb-6">
+            When scaling a micro-frontend architecture with Module Federation, applying structural constraints ensures stability, improves build times, and protects the host application from runtime errors.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Dynamic Remotes Card -->
+            <div class="p-5 bg-slate-950/60 border border-slate-850 rounded-xl space-y-3">
+              <div class="flex items-center gap-2 text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Dynamic Runtime Remotes</h4>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                Rather than hardcoding remote ports at build time inside <code class="text-indigo-300 font-mono">rspack.config.js</code>, resolve URLs dynamically at startup in the browser. This allows server targets to point to staging or production systems without triggering recompilations.
+              </p>
+            </div>
+
+            <!-- Error Boundaries Card -->
+            <div class="p-5 bg-slate-950/60 border border-slate-850 rounded-xl space-y-3">
+              <div class="flex items-center gap-2 text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Vue Error Boundaries</h4>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                If a micro-frontend server crashes, loading its federated bundles will throw critical chunk loading errors. Wrapping remote route outlets in Vue <code class="text-indigo-300 font-mono">Suspense</code> components and handling failures with <code class="text-indigo-300 font-mono">onErrorCaptured</code> keeps the rest of the application fully functional.
+              </p>
+            </div>
+
+            <!-- Style Isolation Card -->
+            <div class="p-5 bg-slate-950/60 border border-slate-850 rounded-xl space-y-3">
+              <div class="flex items-center gap-2 text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                <h4 class="text-xs font-bold uppercase tracking-wider">CSS Style Isolation</h4>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                Since both apps compile Tailwind stylesheets independently (v3 in remote, v4 in host), style selectors can collide and overwrite global tags. Utilizing Tailwind class namespace prefixes (`prefix: 'app1-'`) inside the remote config shields the host styles.
+              </p>
+            </div>
+
+            <!-- Connection Pooling Card -->
+            <div class="p-5 bg-slate-950/60 border border-slate-850 rounded-xl space-y-3">
+              <div class="flex items-center gap-2 text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Optimized Socket Usage</h4>
+              </div>
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                Opening independent DDP socket connections for every micro-frontend saturates network ports. If a remote component only needs read-only or low-frequency static data, replace DDP sub/pub connections with secure HTTP REST or GraphQL calls.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- CODE SNIPPET AREA -->
@@ -404,7 +486,7 @@ const faqs = [
         </div>
 
         <!-- Code selection tabs -->
-        <div class="flex bg-slate-900/30 border-b border-slate-900/80">
+        <div class="flex flex-wrap bg-slate-900/30 border-b border-slate-900/80">
           <button @click="activeConfigTab = 'host'" 
                   class="px-4 py-2.5 text-[10px] font-bold uppercase transition duration-300 border-r border-slate-900"
                   :class="activeConfigTab === 'host' ? 'bg-indigo-600/20 text-indigo-300 border-b-2 border-b-indigo-500' : 'text-slate-500 hover:text-slate-300 bg-slate-950/20'">
@@ -416,9 +498,14 @@ const faqs = [
             Remote Rspack Config
           </button>
           <button @click="activeConfigTab = 'auth'" 
-                  class="px-4 py-2.5 text-[10px] font-bold uppercase transition duration-300"
+                  class="px-4 py-2.5 text-[10px] font-bold uppercase transition duration-300 border-r border-slate-900"
                   :class="activeConfigTab === 'auth' ? 'bg-indigo-600/20 text-indigo-300 border-b-2 border-b-indigo-500' : 'text-slate-500 hover:text-slate-300 bg-slate-950/20'">
             Reactive DDP Auth Sync
+          </button>
+          <button @click="activeConfigTab = 'bestPractices'" 
+                  class="px-4 py-2.5 text-[10px] font-bold uppercase transition duration-300"
+                  :class="activeConfigTab === 'bestPractices' ? 'bg-indigo-600/20 text-indigo-300 border-b-2 border-b-indigo-500' : 'text-slate-500 hover:text-slate-300 bg-slate-950/20'">
+            Vue Error Boundary & Loaders
           </button>
         </div>
 
