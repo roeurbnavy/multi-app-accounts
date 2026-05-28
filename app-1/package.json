@@ -1,0 +1,41 @@
+{
+  "name": "my-app-meteor-3.3",
+  "private": true,
+  "scripts": {
+    "start": "meteor run",
+    "build": "meteor build ../output/vue --directory",
+    "test": "meteor test --once --driver-package meteortesting:mocha",
+    "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
+    "visualize": "meteor --production --extra-packages bundle-visualizer"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.23.5",
+    "@swc/helpers": "^0.5.20",
+    "meteor-node-stubs": "^1.2.12",
+    "vue": "^3.3.9",
+    "vue-meteor-tracker": "^3.0.0-beta.7",
+    "vue-router": "^4.2.5",
+    "vuex": "^4.1.0"
+  },
+  "devDependencies": {
+    "@meteorjs/rspack": "^1.0.1",
+    "@module-federation/enhanced": "^2.5.0",
+    "@rsdoctor/rspack-plugin": "^1.5.5",
+    "@rspack/cli": "^1.7.10",
+    "@rspack/core": "^1.7.10",
+    "@types/meteor": "^2.9.7",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "postcss-loader": "^8.2.1",
+    "rspack-vue-loader": "^17.5.0",
+    "tailwindcss": "^3.3.5"
+  },
+  "meteor": {
+    "modern": true,
+    "mainModule": {
+      "client": "client/main.js",
+      "server": "server/main.js"
+    },
+    "testModule": "tests/main.js"
+  }
+}
