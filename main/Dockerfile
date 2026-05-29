@@ -14,14 +14,15 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install package dependencies
-RUN meteor npm clean-install
+# RUN meteor npm clean-install
+RUN meteor npm install --production
 
 # Copy project source
 COPY . .
 
-# Build Argument for Module Federation Remote URL
-ARG REMOTE_APP1_URL
-ENV REMOTE_APP1_URL=$REMOTE_APP1_URL
+# # Build Argument for Module Federation Remote URL
+# ARG REMOTE_APP1_URL
+# ENV REMOTE_APP1_URL=$REMOTE_APP1_URL
 
 # Build Meteor app into ../output directory
 RUN meteor build ../output --directory --server-only
@@ -38,7 +39,7 @@ WORKDIR /app
 COPY --from=builder /output/bundle ./
 
 # Install production dependencies for the Meteor server bundle
-RUN cd programs/server && npm clean-install --production
+RUN cd programs/server && npm install --production
 
 # Expose default host app port
 EXPOSE 3000
