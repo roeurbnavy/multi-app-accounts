@@ -14,8 +14,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install package dependencies
-# RUN meteor npm clean-install
-RUN meteor npm install --production
+RUN meteor npm install
 
 # Copy project source
 COPY . .
