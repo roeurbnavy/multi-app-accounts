@@ -124,7 +124,7 @@ onMounted(() => {
   </div>
 
   <ul class="list-disc underline">
-    <li v-for="link of links" :key="link._id" class="hover:text-green-700">
+    <li v-for="link of links" :key="link._id" class="hover:text-green-700 mb-2">
       <a :href="link.url" target="_blank">{{ link.title }}</a>
       <button
         class="bg-red-700 hover:bg-red-900 text-white py-2 px-4 rounded ml-2"

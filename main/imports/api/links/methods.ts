@@ -1,6 +1,7 @@
 
 import { Meteor } from "meteor/meteor";
 import { LinksCollection } from "./links";
+import { app1Connection } from "../remote";
 
 Meteor.methods({
   'links.find': async () => {
@@ -15,6 +16,19 @@ Meteor.methods({
   },
   'links.insert': async (data) => {
     const res = await LinksCollection.insertAsync(data)
+
+    if (Meteor.isServer && app1Connection) {
+      try {
+        const docToInsert = { ...data };
+        docToInsert.title = `from main-app: ${data.title}`
+        delete docToInsert._id
+
+        await app1Connection.callAsync("api/insert", docToInsert);
+      } catch (err) {
+        console.error("Error calling remote api/insert:", err);
+      }
+    }
+
     return res
   },
   'links.update': async (data) => {

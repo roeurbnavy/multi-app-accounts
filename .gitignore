@@ -16,6 +16,8 @@ output/
 **/dist/
 **/build/
 **/out/
+**/public/remoteEntry.js*
+**/public/mf-*.json
 
 # Rsdoctor reports
 **/.rsdoctor/

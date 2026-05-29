@@ -10,6 +10,7 @@ Meteor.methods({
   },
   "api/insert": async (doc) => {
     console.log("api/insert", doc);
+
     return await LinksCollection.insertAsync(doc ?? {
       title: "Test",
       url: "https://test.com",
