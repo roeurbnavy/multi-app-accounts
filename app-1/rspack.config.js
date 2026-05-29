@@ -20,7 +20,7 @@ module.exports = defineConfig((Meteor) => {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading
         uniqueName: "app1",
-        publicPath: process.env.PUBLIC_PATH || "http://localhost:8081/",
+        publicPath: "auto",
       },
       devServer: {
         headers: {

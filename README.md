@@ -200,6 +200,8 @@ We provide a [docker-compose.yml](file:///Users/rabbit/Desktop/App/Test/multi-ap
 ### Build & Run Manually with Docker
 If you want to build and run the containers manually:
 
+#### Option A: Deployment using Domain Names
+
 1.  **Build and run the Remote App (`app-1`)**:
     ```bash
     cd app-1
@@ -219,6 +221,32 @@ If you want to build and run the containers manually:
       -e ROOT_URL="https://main-prod.example.com" \
       -e MONGO_URL="mongodb://..." \
       -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"https://app-1-prod.example.com"}}' \
+      multi-app-host
+    ```
+
+#### Option B: Deployment using an IP Address (e.g., `192.168.0.220`)
+
+When deploying directly using an IP address and ports (e.g., Remote on port `4000` and Host on port `3000`), make sure `PUBLIC_PATH` includes the port and ends with a **trailing slash** (`/`):
+
+1.  **Build and run the Remote App (`app-1`)**:
+    ```bash
+    cd app-1
+    docker build --build-arg PUBLIC_PATH="http://192.168.0.220:4000/" -t multi-app-remote .
+    docker run -d -p 4000:4000 \
+      -e ROOT_URL="http://192.168.0.220:4000" \
+      -e MONGO_URL="mongodb://..." \
+      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"http://192.168.0.220:4000"}}' \
+      multi-app-remote
+    ```
+
+2.  **Build and run the Host App (`main`)**:
+    ```bash
+    cd main
+    docker build --build-arg REMOTE_APP1_URL="http://192.168.0.220:4000" -t multi-app-host .
+    docker run -d -p 3000:3000 \
+      -e ROOT_URL="http://192.168.0.220:3000" \
+      -e MONGO_URL="mongodb://..." \
+      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"http://192.168.0.220:4000"}}' \
       multi-app-host
     ```
 

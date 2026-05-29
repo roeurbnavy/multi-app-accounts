@@ -17,9 +17,9 @@ services:
     build:
       context: ./app-1
       dockerfile: Dockerfile
-      args:
-        # In Docker Compose, the remote serves its own assets on its app port (4000)
-        PUBLIC_PATH: "http://localhost:4000/"
+      # args:
+      #   # In Docker Compose, the remote serves its own assets on its app port (4000)
+      #   PUBLIC_PATH: "http://localhost:4000/"
     container_name: multi-app-remote-app1
     ports:
       - "4000:4000"
@@ -39,9 +39,9 @@ services:
     build:
       context: ./main
       dockerfile: Dockerfile
-      args:
-        # Tells the host where to load app1's remoteEntry.js at runtime
-        REMOTE_APP1_URL: "http://localhost:4000"
+      # args:
+      #   # Tells the host where to load app1's remoteEntry.js at runtime
+      #   REMOTE_APP1_URL: "http://localhost:4000"
     container_name: multi-app-host-main
     ports:
       - "3000:3000"
