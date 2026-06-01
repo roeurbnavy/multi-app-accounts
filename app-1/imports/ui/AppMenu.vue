@@ -39,6 +39,15 @@
       >
         Federation
       </router-link>
+      <router-link 
+        :to="{ name: 'todos' }" 
+        class="px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all duration-300"
+        exact-active-class="bg-indigo-600/25 text-indigo-300 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
+        active-class=""
+        class-binding="text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+      >
+        Todo List
+      </router-link>
     </div>
   </nav>
 </template>

@@ -5,5 +5,6 @@
     <router-link :to="{ name: 'remote-home' }" class="mr-4 text-blue-700 hover:underline">Remote Home</router-link>
     <router-link :to="{ name: 'remote-about' }" class="mr-4 text-blue-700 hover:underline">Remote About</router-link>
     <router-link :to="{ name: 'remote-federation' }" class="mr-4 text-blue-700 hover:underline">Remote Federation</router-link>
+    <router-link :to="{ name: 'remote-todos' }" class="mr-4 text-blue-700 hover:underline">Remote Todo List</router-link>
   </nav>
 </template>
