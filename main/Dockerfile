@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y curl build-essential && \
 
 # Allow running Meteor as root inside Docker
 ENV METEOR_ALLOW_SUPERUSER=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV TOOL_NODE_FLAGS="--max-old-space-size=4096"
 
 WORKDIR /app
 
@@ -19,12 +21,12 @@ RUN meteor npm install
 # Copy project source
 COPY . .
 
-# # Build Argument for Module Federation Remote URL
-# ARG REMOTE_APP1_URL
-# ENV REMOTE_APP1_URL=$REMOTE_APP1_URL
+# Build Argument for Module Federation Remote URL
+ARG REMOTE_APP1_URL
+ENV REMOTE_APP1_URL=$REMOTE_APP1_URL
 
 # Build Meteor app into ../output directory
-RUN meteor build ../output --directory --server-only
+RUN meteor build --directory ../output --server-only
 
 # --- Run Stage ---
 FROM node:22-bookworm-slim

@@ -23,11 +23,13 @@ module.exports = defineConfig((Meteor) => {
   // Generate the remotes object dynamically from the config
   const remotes = {};
   for (const [name, config] of Object.entries(REMOTES_CONFIG)) {
-    const url = process.env[config.envVar] || `http://localhost:${config.defaultPort}`;
+    const url =
+      process.env[config.envVar] || `http://localhost:${config.defaultPort}`;
     remotes[name] = `${name}@${url}/remoteEntry.js`;
   }
-
+  console.log("remotes", remotes);
   return {
+    ...Meteor.setCache(!Meteor.isProduction),
     ...(Meteor.isClient && {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading

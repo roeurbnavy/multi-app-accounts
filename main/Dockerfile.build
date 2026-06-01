@@ -1,0 +1,50 @@
+# FROM --platform=linux/amd64 node:14-bullseye
+
+# # ✅ FIX 2: Install build tools for bcrypt/msgpackr native extensions
+# RUN apt-get update && apt-get install -y \
+#     python3 \
+#     make \
+#     g++ \
+#     build-essential \
+#     && rm -rf /var/lib/apt/lists/*
+
+# WORKDIR /usr/src/app
+
+# COPY . .
+
+# # ✅ FIX 3: Use unsafe-perm so npm can build extensions as root
+# RUN cd programs/server && npm install --unsafe-perm && npm run install
+
+# EXPOSE 80
+
+# ENV PORT=80
+# ENV ROOT_URL=http://localhost:80
+# ENV NODE_ENV=production
+
+# CMD [ "main.js" ]
+# --- Run Stage ---
+FROM node:22-bookworm-slim
+
+# Build Argument for Module Federation Remote URL
+ARG REMOTE_APP1_URL
+ENV REMOTE_APP1_URL=$REMOTE_APP1_URL
+
+
+# Install system dependencies if any native node modules need compilation
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy the built server bundle from the builder stage
+COPY . .
+
+# Install production dependencies for the Meteor server bundle
+RUN cd programs/server && npm install --production
+
+# Expose default host app port
+EXPOSE 3000
+
+ENV PORT=3000
+ENV NODE_ENV=production
+
+CMD ["node", "main.js"]

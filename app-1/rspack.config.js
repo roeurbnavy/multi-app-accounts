@@ -16,6 +16,7 @@ const {
  */
 module.exports = defineConfig((Meteor) => {
   return {
+    ...Meteor.setCache(!Meteor.isProduction),
     ...(Meteor.isClient && {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading

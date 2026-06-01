@@ -29,6 +29,10 @@
     "tailwindcss": "^4.1.12",
     "vue-loader": "^17.4.2"
   },
+  "optionalDependencies": {
+    "@rspack/binding-darwin-arm64": "^1.7.11",
+    "@rspack/binding-darwin-x64": "^1.7.11"
+  },
   "meteor": {
     "modern": true,
     "mainModule": {

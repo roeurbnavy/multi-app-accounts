@@ -14,12 +14,13 @@ services:
 
   # app-1 (Remote Micro-Frontend)
   app1-remote:
-    build:
-      context: ./app-1
-      dockerfile: Dockerfile
-      # args:
-      #   # In Docker Compose, the remote serves its own assets on its app port (4000)
-      #   PUBLIC_PATH: "http://localhost:4000/"
+    # build:
+    #   context: ./app-1
+    #   dockerfile: Dockerfile
+    #   # args:
+    #   #   # In Docker Compose, the remote serves its own assets on its app port (4000)
+    #   #   PUBLIC_PATH: "http://localhost:4000/"
+    image: multi-app-remote:latest
     container_name: multi-app-remote-app1
     ports:
       - "4000:4000"
@@ -36,24 +37,25 @@ services:
 
   # main (Host Application Shell)
   main-host:
-    build:
-      context: ./main
-      dockerfile: Dockerfile
-      # args:
-      #   # Tells the host where to load app1's remoteEntry.js at runtime
-      #   REMOTE_APP1_URL: "http://localhost:4000"
+    # build:
+    #   context: ./main
+    #   dockerfile: Dockerfile
+    #   # args:
+    #   #   # Tells the host where to load app1's remoteEntry.js at runtime
+    #   #   REMOTE_APP1_URL: "http://localhost:4000"
+    image: multi-app-host:latest
     container_name: multi-app-host-main
     ports:
-      - "3000:3000"
+      - "6000:6000"
     depends_on:
       - mongodb
       - app1-remote
     environment:
-      - PORT=3000
-      - ROOT_URL=http://localhost:3000
+      - PORT=6000
+      - ROOT_URL=http://localhost:6000
       - MONGO_URL=mongodb://mongodb:27017/shared-db
       # Configures DDP to connect to the app-1 container backend
-      - METEOR_SETTINGS={"public":{"remoteServerUrl":"http://localhost:4000"}}
+      - METEOR_SETTINGS={"public":{"remoteServerUrl":"http://multi-app-remote-app1:4000"}}
     networks:
       - multi-app-network
 
