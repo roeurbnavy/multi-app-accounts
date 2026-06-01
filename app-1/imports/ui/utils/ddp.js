@@ -7,7 +7,7 @@ const connections = {};
 
 /**
  * Gets or establishes a DDP connection to a remote Meteor application.
- * 
+ *
  * @param {string} remoteName - Name of the remote (e.g. 'app1')
  * @param {number} defaultPort - Fallback port for local development
  * @returns {object} The Meteor or DDP connection instance
@@ -21,9 +21,12 @@ export function getRemoteConnection(remoteName, defaultPort) {
   ) {
     return Meteor;
   }
-
+  console.log("Meteor.settings.public", Meteor.settings.public);
   if (!connections[remoteName]) {
-    const remoteUrl = Meteor.settings.public?.[`${remoteName}ServerUrl`] || `http://localhost:${defaultPort}`;
+    const remoteUrl =
+      Meteor.settings.public?.[`${remoteName}ServerUrl`] ||
+      `http://localhost:${defaultPort}`;
+    console.log("remoteUrl", remoteUrl);
     const conn = DDP.connect(remoteUrl);
     connections[remoteName] = conn;
 
@@ -53,4 +56,3 @@ export function getRemoteConnection(remoteName, defaultPort) {
 
   return connections[remoteName];
 }
-
