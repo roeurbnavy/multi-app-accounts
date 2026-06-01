@@ -21,7 +21,7 @@ This is a simple example of how to use Vue3 with Meteor.
 # Build manual
 
 ```bash
-REMOTE_APP1_URL="<public-ip>:4000" meteor build --allow-superuser --directory <output-dir> --server-only --architecture os.linux.x86_64
+REMOTE_APP1_URL="http://<public-ip>:4000" meteor build --allow-superuser --directory <output-dir> --server-only
 
 
 # Copy Dockerfile.build to bundle
@@ -38,8 +38,8 @@ docker push rnavy/multi-app:main-host
 
 ```bash
 
-REMOTE_APP1_URL="192.168.0.220:4000" meteor build --allow-superuser --directory ~/Desktop/App/build/main/ --server-only --architecture os.linux.x86_64
-cp Dockerfile.build ~/Desktop/App/build/main/bundle/Dockerfile.build
-docker build --build-arg REMOTE_APP1_URL="http://192.168.0.220:4000" --platform linux/amd64 -t rnavy/multi-app:main-host ~/Desktop/App/build/main/bundle/
-docker push rnavy/multi-app:main-host
+REMOTE_APP1_URL="http://192.168.0.220:4000" meteor build --allow-superuser --directory ~/Desktop/App/build/main/ --server-only
+cp Dockerfile.build ~/Desktop/App/build/main/bundle/Dockerfile
+docker build --build-arg REMOTE_APP1_URL="http://192.168.0.220:4000" --platform linux/amd64 -t rnavy/multi-app:main-app-host ~/Desktop/App/build/main/bundle/
+docker push rnavy/multi-app:main-app-host
 ```

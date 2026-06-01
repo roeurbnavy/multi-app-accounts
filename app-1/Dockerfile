@@ -29,7 +29,7 @@ COPY . .
 RUN meteor build --directory ../output --server-only
 
 # --- Run Stage ---
-FROM node:22-bookworm-slim
+FROM --platform=linux/amd64 node:22-bookworm-slim
 
 # Install system dependencies if any native node modules need compilation
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*

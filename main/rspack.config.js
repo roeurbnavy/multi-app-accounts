@@ -24,8 +24,12 @@ module.exports = defineConfig((Meteor) => {
   // Generate the remotes object dynamically from the config
   const remotes = {};
   for (const [name, config] of Object.entries(REMOTES_CONFIG)) {
-    const url =
+    let url =
       process.env[config.envVar] || `http://localhost:${config.defaultPort}`;
+    // Guard: If the URL doesn't start with a protocol or double slashes, prepend http://
+    if (url && !/^https?:\/\//i.test(url) && !/^\/\//.test(url)) {
+      url = `http://${url}`;
+    }
     remotes[name] = `${name}@${url}/remoteEntry.js`;
   }
   console.log("remotes", remotes);
@@ -47,6 +51,9 @@ module.exports = defineConfig((Meteor) => {
           name: "main",
           filename: "remoteEntry.js",
           remotes,
+          // remotes: {
+          //   app1: "app1@http://5.223.49.73:4000/remoteEntry.js",
+          // },
           shared: {
             vue: {
               singleton: true,
