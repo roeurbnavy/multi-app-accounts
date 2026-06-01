@@ -1,5 +1,6 @@
 const { defineConfig } = require("@meteorjs/rspack");
 const { VueLoaderPlugin } = require("rspack-vue-loader");
+const { DefinePlugin } = require("@rspack/core");
 const {
   ModuleFederationPlugin,
 } = require("@module-federation/enhanced/rspack");
@@ -21,15 +22,21 @@ module.exports = defineConfig((Meteor) => {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading
         uniqueName: "app1",
-        publicPath: "auto",
+        publicPath: process.env.PUBLIC_PATH || (Meteor.isProduction ? "auto" : "http://localhost:8081/"),
       },
       devServer: {
+        port: 8081,
         headers: {
           "Access-Control-Allow-Origin": "*",
         },
       },
       plugins: [
         new VueLoaderPlugin(),
+        new DefinePlugin({
+          __VUE_OPTIONS_API__: JSON.stringify(true),
+          __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
+          __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+        }),
         new ModuleFederationPlugin({
           name: "app1",
           filename: "remoteEntry.js",
