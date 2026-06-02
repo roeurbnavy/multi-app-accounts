@@ -5,16 +5,6 @@ const {
   ModuleFederationPlugin,
 } = require("@module-federation/enhanced/rspack");
 
-/**
- * Rspack configuration for Meteor projects.
- *
- * Provides typed flags on the `Meteor` object, such as:
- * - `Meteor.isClient` / `Meteor.isServer`
- * - `Meteor.isDevelopment` / `Meteor.isProduction`
- * - …and other flags available
- *
- * Use these flags to adjust your build settings based on environment.
- */
 // List of remote apps for Module Federation. Add any new remotes here.
 const REMOTES_CONFIG = {
   app1: { envVar: "REMOTE_APP1_URL", defaultPort: 8081 },
@@ -38,7 +28,12 @@ module.exports = defineConfig((Meteor) => {
     ...(Meteor.isClient && {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading
-        uniqueName: "main",
+        uniqueName: "main-b",
+      },
+      devServer: {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
       },
       plugins: [
         new VueLoaderPlugin(),
@@ -48,12 +43,9 @@ module.exports = defineConfig((Meteor) => {
           __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
         }),
         new ModuleFederationPlugin({
-          name: "main",
+          name: "main-b",
           filename: "remoteEntry.js",
           remotes,
-          // remotes: {
-          //   app1: "app1@http://5.223.49.73:4000/remoteEntry.js",
-          // },
           shared: {
             vue: {
               singleton: true,

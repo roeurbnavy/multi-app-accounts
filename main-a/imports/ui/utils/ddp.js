@@ -38,7 +38,12 @@ export function getRemoteConnection(remoteName, defaultPort) {
 
         if (!isLoggingIn) {
           if (userId && token) {
-            conn.call("login", { resume: token }, (err) => {
+            conn.call("login", {
+              multiHostLogin: {
+                token: token,
+                origin: window.location.origin
+              }
+            }, (err) => {
               if (err) {
                 console.error(`[DDP ${remoteName}] Auth sync failed:`, err);
               } else {

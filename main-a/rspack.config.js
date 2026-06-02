@@ -1,5 +1,5 @@
 const { defineConfig } = require("@meteorjs/rspack");
-const { VueLoaderPlugin } = require("rspack-vue-loader");
+const { VueLoaderPlugin } = require("vue-loader");
 const { DefinePlugin } = require("@rspack/core");
 const {
   ModuleFederationPlugin,
@@ -15,14 +15,30 @@ const {
  *
  * Use these flags to adjust your build settings based on environment.
  */
+// List of remote apps for Module Federation. Add any new remotes here.
+const REMOTES_CONFIG = {
+  app1: { envVar: "REMOTE_APP1_URL", defaultPort: 8081 },
+};
+
 module.exports = defineConfig((Meteor) => {
+  // Generate the remotes object dynamically from the config
+  const remotes = {};
+  for (const [name, config] of Object.entries(REMOTES_CONFIG)) {
+    let url =
+      process.env[config.envVar] || `http://localhost:${config.defaultPort}`;
+    // Guard: If the URL doesn't start with a protocol or double slashes, prepend http://
+    if (url && !/^https?:\/\//i.test(url) && !/^\/\//.test(url)) {
+      url = `http://${url}`;
+    }
+    remotes[name] = `${name}@${url}/remoteEntry.js`;
+  }
+  console.log("remotes", remotes);
   return {
     ...Meteor.setCache(!Meteor.isProduction),
     ...(Meteor.isClient && {
       output: {
         // uniqueName is highly recommended for Module Federation HMR and chunk loading
-        uniqueName: "app1",
-        publicPath: process.env.PUBLIC_PATH || (Meteor.isProduction ? "auto" : "http://localhost:8081/"),
+        uniqueName: "main-a",
       },
       devServer: {
         headers: {
@@ -37,31 +53,20 @@ module.exports = defineConfig((Meteor) => {
           __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
         }),
         new ModuleFederationPlugin({
-          name: "app1",
+          name: "main",
           filename: "remoteEntry.js",
-          exposes: {
-            "./router": "./imports/ui/router.js",
-          },
+          remotes,
           // remotes: {
-          //   // Add remote applications here, e.g.:
-          //   // remoteApp: "remoteApp@http://localhost:3001/remoteEntry.js",
+          //   app1: "app1@http://5.223.49.73:4000/remoteEntry.js",
           // },
           shared: {
-            // Share Vue across federated modules to avoid loading multiple instances
             vue: {
               singleton: true,
               requiredVersion: "^3.3.9",
-              eager: true,
             },
             "vue-router": {
               singleton: true,
               requiredVersion: "^4.2.5",
-              eager: true,
-            },
-            vuex: {
-              singleton: true,
-              requiredVersion: "^4.1.0",
-              eager: true,
             },
           },
         }),
@@ -70,7 +75,7 @@ module.exports = defineConfig((Meteor) => {
         rules: [
           {
             test: /\.vue$/,
-            loader: "rspack-vue-loader",
+            loader: "vue-loader",
             options: {
               // Note, for the majority of features to be available, make sure this option is `true`
               experimentalInlineMatchResource: true,

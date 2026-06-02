@@ -1,88 +1,217 @@
-# Multi-App Accounts Workspace
+# Multi-App Accounts Workspace (Multi-Tenant Isolated Databases)
 
 A monorepo-style workspace featuring **Meteor.js 3**, **Vue 3**, and **Rspack** with integrated **Module Federation** to support multi-application accounts and micro-frontend structures.
+
+This workspace is configured for **Isolated Databases per Host (True Multi-Tenant Isolation)**. Each host and remote application runs on its own isolated MongoDB database, while maintaining Single Sign-On (SSO) using a secure HTTP token verification loop.
 
 ---
 
 ## 📂 Repository Structure
 
-The workspace contains two core applications running on Meteor 3.x and integrated with Vue 3 and modern build systems:
+The workspace contains three core applications running on Meteor 3.x and integrated with Vue 3 and modern build systems:
 
-- **[`main`](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/main)**: The primary host application.
-  - **Tech Stack**: Meteor 3.x, Vue 3, Rspack, Tailwind CSS v4, Vue Router, `@module-federation/enhanced`
-  - **Role**: Host / Shell application that orchestrates layout, authentication, and shares core services/state.
+- **[`main-a`](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/main-a)**: The primary host application A.
+  - **Ports**: App Port `3000` | Rspack devServer Port `8080`
+  - **Database**: `main-a-db`
+- **[`main-b`](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/main-b)**: The secondary host application B.
+  - **Ports**: App Port `3001` | Rspack devServer Port `8082`
+  - **Database**: `main-b-db`
 - **[`app-1`](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/app-1)**: A remote micro-frontend.
-  - **Tech Stack**: Meteor 3.x, Vue 3, Rspack, Tailwind CSS v3, Vuex, Vue Router, `@module-federation/enhanced`
-  - **Role**: Sub-application / Remote module providing specific workspace features or account management panels.
+  - **Ports**: App Port `4000` | Rspack devServer Port `8081`
+  - **Database**: `app1-db`
 
 ---
 
 ## ⚡ Tech Stack & Architecture
 
-This architecture leverages the high performance of **Rspack** (a fast Rust-based replacement for Webpack) along with Meteor's robust backend-to-frontend reactivity.
+This architecture leverages the high performance of **Rspack** (a fast Rust-based replacement for Webpack) along with Meteor's robust backend-to-frontend reactivity and Module Federation for runtime sharing.
 
 ```mermaid
 graph TD
-    A[main host] <-->|Module Federation| B[app-1 remote]
-    A --> C[Meteor 3 Server]
-    B --> D[Meteor 3 Server]
-    subgraph "main app"
-        A
-        C
-    end
-    subgraph "app-1 app"
-        B
-        D
+    A[main-a Host A] <-->|Module Federation| C[app-1 Remote]
+    B[main-b Host B] <-->|Module Federation| C
+    
+    A -->|Primary connection| D[(main-a-db)]
+    B -->|Primary connection| E[(main-b-db)]
+    C -->|Primary connection| F[(app1-db)]
+    
+    subgraph "SSO Verification Handshake"
+        C -.->|HTTP POST /api/verify-token| A
+        C -.->|HTTP POST /api/verify-token| B
     end
 ```
 
-### Key Technical Decisions
+### Key Technical Implementations
 
-- **Rspack Bundling**: Significant reduction in build and hot-module replacement (HMR) times.
-- **Module Federation**: Enables runtime sharing of Vue components and store instances between `main` and `app-1`.
-- **Meteor 3.x**: Embracing modern Meteor development with asynchronous API patterns and improved performance.
+- **Multi-Tenant SSO Handshake:** Because databases are isolated, `app-1`'s server cannot look up user login tokens in `main-a`'s or `main-b`'s database directly. Instead:
+  1. The client passes `{ multiHostLogin: { token, origin } }` when connecting to `app-1`.
+  2. `app-1`'s server intercepts the request and calls the issuing host's `/api/verify-token` HTTP endpoint.
+  3. The host validates the token in its database and returns the profile.
+  4. `app-1` automatically resolves or creates a local shadow tenant user in `app1-db`.
+- **Rspack Port Isolation:** Uses the `RSPACK_DEVSERVER_PORT` environment variable in each app's `package.json` to allocate unique devServer ports (`8080`, `8081`, `8082`), avoiding `EADDRINUSE` conflicts when running concurrently.
+- **Meteor Cache Ignoring:** Employs `.meteorignore` configurations to ignore Rspack cache outputs (`node_modules/.cache/`), preventing infinite compilation loops.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 How to Use (Local Development)
 
-To run either of the applications, make sure you have [Meteor](https://www.meteor.com/install) installed on your system.
+To run the applications locally, ensure you have [Meteor](https://www.meteor.com/install) installed on your system.
 
-### Running `main` (Host)
+### Running Locally (Concurrent Boot)
 
-1.  Navigate to the `main` directory:
-    ```bash
-    cd main
-    ```
-2.  Install dependencies:
-    ```bash
-    meteor npm install
-    ```
-3.  Start the development server:
+Start each application in a separate terminal:
 
-    ```bash
-    meteor
-    ```
+#### 1. Run `app-1` (Remote)
+```bash
+cd app-1
+meteor npm install
+meteor npm run start
+```
+*Runs at `http://localhost:4000` (Rspack assets on `http://localhost:8081`)*
 
-    - The app will run at `http://localhost:3000` (or the default port configured).
+#### 2. Run `main-a` (Host A)
+```bash
+cd main-a
+meteor npm install
+meteor npm run start
+```
+*Runs at `http://localhost:3000` (Rspack assets on `http://localhost:8080`)*
 
-### Running `app-1` (Remote)
+#### 3. Run `main-b` (Host B)
+```bash
+cd main-b
+meteor npm install
+meteor npm run start
+```
+*Runs at `http://localhost:3001` (Rspack assets on `http://localhost:8082`)*
 
-1.  Navigate to the `app-1` directory:
-    ```bash
-    cd app-1
-    ```
-2.  Install dependencies:
-    ```bash
-    meteor npm install
-    ```
-3.  Start the development server:
+### 🧪 Verifying the Setup
 
-    ```bash
-    meteor --port 4000
-    ```
+1. Open `http://localhost:3000` (`main-a`) and `http://localhost:3001` (`main-b`) in separate tabs.
+2. Sign in or register as `admin / 123456` in both.
+3. Click on the **Remote Todo List** link in both tabs.
+4. Add a Todo inside Host A. It will be saved inside `app-1`'s database under Host A's user namespace.
+5. Notice that the Todo does **not** show up inside Host B's Todo List because they are separate user scopes and databases!
 
-    - The remote application runs on a separate port to prevent conflicts.
+---
+
+## 📦 How to Build (Production Bundling)
+
+There are two ways to compile and package your applications for production:
+
+### Option A: Manual Build (Meteor CLI)
+
+You can build the applications manually using the Meteor CLI. In production, we compile static client bundles, which means we must specify the target host URLs at build-time so the bundler can generate the proper Module Federation mappings.
+
+#### 1. Build `app-1` (Remote)
+Set `PUBLIC_PATH` to the absolute URL where the remote static assets will be served (must end with a trailing slash `/`):
+```bash
+cd app-1
+PUBLIC_PATH="https://app1-prod.example.com/" meteor build --directory ../output/app-1 --server-only
+```
+
+#### 2. Build `main-a` (Host A)
+Set `REMOTE_APP1_URL` to point to `app-1`'s domain:
+```bash
+cd main-a
+REMOTE_APP1_URL="https://app1-prod.example.com" meteor build --directory ../output/main-a --server-only
+```
+
+#### 3. Build `main-b` (Host B)
+Set `REMOTE_APP1_URL` to point to `app-1`'s domain:
+```bash
+cd main-b
+REMOTE_APP1_URL="https://app1-prod.example.com" meteor build --directory ../output/main-b --server-only
+```
+
+#### 4. Post-Build Setup (Installing Production Dependencies)
+For each built bundle, navigate to its server programs folder and install production dependencies:
+```bash
+# Example for main-a
+cd ../output/main-a/bundle/programs/server
+npm install --production
+```
+To run the server, set your environment variables and start the node app:
+```bash
+PORT=3000 ROOT_URL=https://main-a.example.com MONGO_URL=mongodb://... node main.js
+```
+
+---
+
+### Option B: Docker Compose Build (Containerized)
+
+We provide a [docker-compose.yml](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/docker-compose.yml) file to automatically build container images and run them in containerized mode.
+
+#### 1. Build and run all containers:
+```bash
+docker compose up --build -d
+```
+*This command triggers multi-stage builds inside each folder's Dockerfile, passing target arguments automatically, and starts a local MongoDB container.*
+
+#### 2. Verify running services:
+* MongoDB is running on `localhost:27017`
+* `app-1` (Remote) is running on `http://localhost:4000`
+* `main-a` (Host A) is running on `http://localhost:3000`
+* `main-b` (Host B) is running on `http://localhost:3001`
+
+#### 3. Shut down services:
+```bash
+docker compose down
+```
+---
+
+### Option C: Manual Docker Build (Raw Docker CLI)
+
+If you want to build and run the containers manually without Docker Compose:
+
+#### 1. Build the Images
+Set the build arguments for each folder:
+
+- **Build `app-1` (Remote):**
+  ```bash
+  cd app-1
+  docker build --build-arg PUBLIC_PATH="https://app1-prod.example.com/" -t multi-app-remote-app1 .
+  ```
+- **Build `main-a` (Host A):**
+  ```bash
+  cd ../main-a
+  docker build --build-arg REMOTE_APP1_URL="https://app1-prod.example.com" -t multi-app-host-main-a .
+  ```
+- **Build `main-b` (Host B):**
+  ```bash
+  cd ../main-b
+  docker build --build-arg REMOTE_APP1_URL="https://app1-prod.example.com" -t multi-app-host-main-b .
+  ```
+
+#### 2. Run the Containers
+Ensure you pass the correct environment variables for isolated databases and host settings:
+
+- **Run `app-1`:**
+  ```bash
+  docker run -d -p 4000:4000 \
+    --name app1-container \
+    -e ROOT_URL="https://app1-prod.example.com" \
+    -e MONGO_URL="mongodb://<mongodb-ip>:27017/app1-db" \
+    multi-app-remote-app1
+  ```
+- **Run `main-a`:**
+  ```bash
+  docker run -d -p 3000:3000 \
+    --name main-a-container \
+    -e ROOT_URL="https://main-a.example.com" \
+    -e MONGO_URL="mongodb://<mongodb-ip>:27017/main-a-db" \
+    -e METEOR_SETTINGS='{"public":{"app1ServerUrl":"https://app1-prod.example.com"}}' \
+    multi-app-host-main-a
+  ```
+- **Run `main-b`:**
+  ```bash
+  docker run -d -p 3001:3000 \
+    --name main-b-container \
+    -e ROOT_URL="https://main-b.example.com" \
+    -e MONGO_URL="mongodb://<mongodb-ip>:27017/main-b-db" \
+    -e METEOR_SETTINGS='{"public":{"app1ServerUrl":"https://app1-prod.example.com"}}' \
+    multi-app-host-main-b
+  ```
 
 ---
 
@@ -90,186 +219,136 @@ To run either of the applications, make sure you have [Meteor](https://www.meteo
 
 ### Module Federation Setup
 
-Both applications configure `@module-federation/enhanced` inside their respective `rspack.config.js` files:
+Host applications configure `@module-federation/enhanced` inside their respective `rspack.config.js` files:
 
-- `main` acts as the host consuming remotes and exposing shared dependencies (`vue`, `vue-router`, etc.).
-- `app-1` acts as a remote exposing specific routes, components, or modules to be dynamically loaded by the host.
+- `main-a` and `main-b` act as hosts consuming remotes and exposing shared dependencies (`vue`, `vue-router`, etc.).
+- `app-1` acts as a remote exposing specific routes, components, or modules to be dynamically loaded by the hosts.
 
-### Styling & CSS
+### Cross-Application DDP Connections
 
-- `main` uses **Tailwind CSS v4** configured with `@tailwindcss/postcss`.
-- `app-1` uses **Tailwind CSS v3** configured with `autoprefixer` and `tailwind.config.js`.
-
----
-
-## ⚠️ Important Integration Notes
-
-### 1. Tailwind CSS Class Compilation (Host Scanning)
-Because Tailwind compiles utility classes on-demand based on source files, utility classes used in `app-1`'s remote components but **not** in `main`'s code would normally be missing in the host build.
-*   **Solution**: The host's CSS file `main/imports/ui/main.css` includes a wildcard `@source` directive pointing to all remote app directories:
-    ```css
-    @source "../../../app-*/imports/**/*.{vue,js,ts,jsx,tsx}";
-    ```
-*   This pattern ensures that any new remote added (e.g., `app-2`, `app-3`) will automatically have its styling scanned by the host CSS compiler.
-
-### 2. Port & Host Settings
-For Module Federation and data synchronization to work correctly:
-*   **Main App**: Runs on port `3000`.
-*   **App 1**: Runs on port `4000`.
-*   **App 1 Assets / Module Federation Entry**: Served by Rspack on port `8081` (`http://localhost:8081/remoteEntry.js`).
-*   Ensure both applications are running concurrently during development.
-
-### 3. Cross-Application DDP Connections
-Since remote components from `app-1` (or future remotes) are rendered inside the host shell (`main`), calls to Meteor methods in those components must be routed back to their respective remote backend server.
-*   This is automated via the `getRemoteConnection(remoteName, defaultPort)` utility helper (located in `imports/ui/utils/ddp.js` for both applications).
-*   It automatically detects if it's running inside the standalone remote or consuming host shell, and returns the appropriate client connection (reusing native `Meteor` or creating a DDP connection dynamically).
-
+Since remote components from `app-1` are rendered inside the host shells, calls to Meteor methods in those components must be routed back to their respective remote backend server.
+* This is automated via the `getRemoteConnection(remoteName, defaultPort)` utility helper (located in `imports/ui/utils/ddp.js` for all applications).
+* It automatically detects if it's running inside the standalone remote or consuming host shell, and returns the appropriate client connection (reusing native `Meteor` or creating a DDP connection dynamically).
 
 ---
 
-## 📦 Production & Release Checklist
+## 🔄 How to Upgrade a Project to Module Federation
 
-Before releasing to production, make sure you configure and verify the following settings:
+If you want to migrate a standard Meteor + Vue 3 + Rspack project to utilize Module Federation, follow this step-by-step integration blueprint:
 
-### 1. Build Environment Variables
+### 1. Install Dev Dependencies
+Install the required module federation compilation dependencies on **both** the host and remote projects:
+```bash
+meteor npm install --save-dev @module-federation/enhanced
+```
 
-During the bundle/build process (`meteor build`), ensure you provide the correct production URLs:
+### 2. Create the Async Boot Boundary (Host & Remote)
+Module Federation needs to load shared modules (like Vue) asynchronously *before* the application bootstraps. To allow this, you must introduce an asynchronous import boundary at your client entry point:
 
-- **For `app-1` (Remote)**:
-  Set the `PUBLIC_PATH` to the absolute URL where `app-1` assets are served (must end with `/`):
-  ```bash
-  PUBLIC_PATH="https://app-1-prod.example.com/"
-  ```
-- **For `main` (Host)**:
-  Set `REMOTE_APP1_URL` to point to the `app-1` domain:
-  ```bash
-  REMOTE_APP1_URL="https://app-1-prod.example.com"
-  ```
-
-### 2. Meteor Settings (`settings.json`)
-
-Configure your production settings (e.g. `settings-prod.json`) for the host and remote clients:
-
-- Specify the remote DDP server URL inside `public.remoteServerUrl`:
-  ```json
-  {
-    "public": {
-      "remoteServerUrl": "https://app-1-prod.example.com"
-    }
-  }
-  ```
-- Launch Meteor with the `--settings` flag or set the `METEOR_SETTINGS` environment variable.
-
-### 3. CORS Configuration
-
-Because the host application (`main`) downloads JavaScript chunks dynamically from `app-1`'s host, the remote server serving `app-1`'s static assets **must** allow cross-origin requests:
-
-- Add CORS headers for static files (particularly `remoteEntry.js` and JS/CSS chunks):
-  ```http
-  Access-Control-Allow-Origin: https://main-prod.example.com (or "*" with authentication/safety review)
-  Access-Control-Allow-Methods: GET, OPTIONS
-  ```
-
-### 4. Sticky Sessions on Load Balancer
-*   Meteor's reactive DDP protocol uses WebSockets and fallback polling. If deploying behind a load balancer (e.g., Nginx, AWS ALB), make sure **sticky sessions (session affinity)** is enabled.
+1. **Move Boot Code:** Move your actual Vue app creation logic out of your main client entry file (e.g. `client/main.js`) into an imported file (e.g. `imports/ui/main.js`).
+2. **Dynamic Entry:** Replace your client entry file (`client/main.js`) with a single dynamic import:
+   ```javascript
+   // client/main.js
+   import('../imports/ui/main');
+   ```
 
 ---
 
-## 🐳 Containerization with Docker
+### 3. Configure the Remote Application (The Exporter)
+The remote application compiles assets and exposes routes, components, or stores.
 
-Both applications feature multi-stage `Dockerfile` configurations targeting Node 22 (matching Meteor 3.x requirements):
-*   **Host Dockerfile**: [main/Dockerfile](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/main/Dockerfile)
-*   **Remote Dockerfile**: [app-1/Dockerfile](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/app-1/Dockerfile)
+#### Modify `rspack.config.js`
+Update the remote configuration in [app-1 rspack.config.js](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/app-1/rspack.config.js):
 
-### Build & Run with Docker Compose (Recommended)
-We provide a [docker-compose.yml](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/docker-compose.yml) file to build and run all services (including a MongoDB database) locally with a single command.
+1. **Set `output.uniqueName` & `output.publicPath`:**
+   ```javascript
+   output: {
+     uniqueName: "app1", // Must be unique across all remotes
+     publicPath: process.env.PUBLIC_PATH || (Meteor.isProduction ? "auto" : "http://localhost:8081/"),
+   }
+   ```
+2. **Configure devServer CORS:** The host browser will download Javascript chunks from the remote. Enable cross-origin headers in development:
+   ```javascript
+   devServer: {
+     headers: {
+       "Access-Control-Allow-Origin": "*",
+     }
+   }
+   ```
+3. **Import and Register the Module Federation Plugin:**
+   ```javascript
+   const { ModuleFederationPlugin } = require("@module-federation/enhanced/rspack");
 
-1.  **Build and start all services**:
-    ```bash
-    docker compose up --build -d
-    ```
-2.  **Verify running services**:
-    *   MongoDB is running on `localhost:27017`
-    *   `app-1` (Remote) is running on `http://localhost:4000` (serving its own Module Federation assets)
-    *   `main` (Host) is running on `http://localhost:3000`
-3.  **Shut down services**:
-    ```bash
-    docker compose down
-    ```
-
-### Build & Run Manually with Docker
-If you want to build and run the containers manually:
-
-#### Option A: Deployment using Domain Names
-
-1.  **Build and run the Remote App (`app-1`)**:
-    ```bash
-    cd app-1
-    docker build --build-arg PUBLIC_PATH="https://app-1-prod.example.com/" -t multi-app-remote .
-    docker run -d -p 4000:4000 \
-      -e ROOT_URL="https://app-1-prod.example.com" \
-      -e MONGO_URL="mongodb://..." \
-      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"https://app-1-prod.example.com"}}' \
-      multi-app-remote
-    ```
-
-2.  **Build and run the Host App (`main`)**:
-    ```bash
-    cd main
-    docker build --build-arg REMOTE_APP1_URL="https://app-1-prod.example.com" -t multi-app-host .
-    docker run -d -p 3000:3000 \
-      -e ROOT_URL="https://main-prod.example.com" \
-      -e MONGO_URL="mongodb://..." \
-      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"https://app-1-prod.example.com"}}' \
-      multi-app-host
-    ```
-
-#### Option B: Deployment using an IP Address (e.g., `192.168.0.220`)
-
-When deploying directly using an IP address and ports (e.g., Remote on port `4000` and Host on port `3000`), make sure `PUBLIC_PATH` includes the port and ends with a **trailing slash** (`/`):
-
-1.  **Build and run the Remote App (`app-1`)**:
-    ```bash
-    cd app-1
-    docker build --build-arg PUBLIC_PATH="http://192.168.0.220:4000/" -t multi-app-remote .
-    docker run -d -p 4000:4000 \
-      -e ROOT_URL="http://192.168.0.220:4000" \
-      -e MONGO_URL="mongodb://..." \
-      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"http://192.168.0.220:4000"}}' \
-      multi-app-remote
-    ```
-
-2.  **Build and run the Host App (`main`)**:
-    ```bash
-    cd main
-    docker build --build-arg REMOTE_APP1_URL="http://192.168.0.220:4000" -t multi-app-host .
-    docker run -d -p 3000:3000 \
-      -e ROOT_URL="http://192.168.0.220:3000" \
-      -e MONGO_URL="mongodb://..." \
-      -e METEOR_SETTINGS='{"public":{"remoteServerUrl":"http://192.168.0.220:4000"}}' \
-      multi-app-host
-    ```
-
+   // Under plugins array:
+   new ModuleFederationPlugin({
+     name: "app1", // Remote name referenced by the host
+     filename: "remoteEntry.js",
+     exposes: {
+       "./router": "./imports/ui/router.js", // Key-value pair of exposed files
+     },
+     shared: {
+       vue: { singleton: true, requiredVersion: "^3.3.9", eager: true },
+       "vue-router": { singleton: true, requiredVersion: "^4.2.5", eager: true }
+     }
+   })
+   ```
 
 ---
 
-## 🤖 Automated Deployment with Ansible
+### 4. Configure the Host Application (The Consumer)
+The host application downloads the exposed scripts and stitches the modules together.
 
-The workspace includes a production Ansible Playbook ([deploy.yml](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/deploy.yml)) that automates:
-1. Pulling your latest source code from Git onto the target server.
-2. Building Docker images using correct build-time arguments (`PUBLIC_PATH` and `REMOTE_APP1_URL`).
-3. Running containers with specified port mappings, network routing, and environment variables.
+#### Modify `rspack.config.js`
+Update the host configuration in [main-a rspack.config.js](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/main-a/rspack.config.js):
 
-### How to Run the Playbook
+1. **Set unique name:**
+   ```javascript
+   output: {
+     uniqueName: "main_a",
+   }
+   ```
+2. **Register the remotes and plugins:**
+   ```javascript
+   const { ModuleFederationPlugin } = require("@module-federation/enhanced/rspack");
 
-1.  **Configure hosts**: Create an inventory file `hosts.ini` pointing to your web server:
-    ```ini
-    [webservers]
-    your-server-ip ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
-    ```
-2.  **Configure variables**: Update the default values inside `vars:` section in [deploy.yml](file:///Users/rabbit/Desktop/App/Test/multi-app-accounts/deploy.yml) (e.g., repository URL, domains, and database credentials).
-3.  **Run the playbook**:
-    ```bash
-    ansible-playbook -i hosts.ini deploy.yml
-    ```
+   new ModuleFederationPlugin({
+     name: "main_a",
+     filename: "remoteEntry.js",
+     remotes: {
+       // Format: name@url/remoteEntry.js
+       app1: "app1@http://localhost:8081/remoteEntry.js",
+     },
+     shared: {
+       vue: { singleton: true, requiredVersion: "^3.3.9" },
+       "vue-router": { singleton: true, requiredVersion: "^4.2.5" }
+     }
+   })
+   ```
+
+---
+
+### 5. Mount Remote Modules inside the Host Shell
+Once federation is active, you can import exposed elements from the remote using standard ESM imports:
+
+#### Route Aggregation Example (`main-a/imports/ui/router.js`):
+```javascript
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "./views/Home.vue";
+
+// 1. Import exposed modules from 'app1' alias
+import { routes as remoteRoutes } from "app1/router";
+
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: "/", name: "home", component: Home },
+    // 2. Append remote views dynamically
+    ...remoteRoutes.map((route) => ({
+      path: `/remote${route.path === "/" ? "" : route.path}`,
+      name: `remote-${route.name}`,
+      component: route.component,
+    })),
+  ],
+});
+```
 

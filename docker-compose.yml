@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  # MongoDB database instance shared by both applications
+  # MongoDB database instance shared by all applications (but using separate database names)
   mongodb:
     image: mongo:6.0
     container_name: multi-app-mongodb
@@ -14,13 +14,9 @@ services:
 
   # app-1 (Remote Micro-Frontend)
   app1-remote:
-    # build:
-    #   context: ./app-1
-    #   dockerfile: Dockerfile
-    #   # args:
-    #   #   # In Docker Compose, the remote serves its own assets on its app port (4000)
-    #   #   PUBLIC_PATH: "http://localhost:4000/"
-    image: rnavy/multi-app:multi-app-remote
+    build:
+      context: ./app-1
+      dockerfile: Dockerfile
     container_name: multi-app-remote-app1
     ports:
       - "4000:4000"
@@ -29,22 +25,21 @@ services:
     environment:
       - PORT=4000
       - ROOT_URL=http://localhost:4000
-      - MONGO_URL=mongodb://mongodb:27017/shared-db
+      - MONGO_URL=mongodb://mongodb:27017/app1-db
       # Configures DDP to connect to itself locally when running standalone
       - METEOR_SETTINGS={"public":{"app1ServerUrl":"http://localhost:4000"}}
     networks:
       - multi-app-network
 
-  # main (Host Application Shell)
-  main-host:
-    # build:
-    #   context: ./main
-    #   dockerfile: Dockerfile
-    #   # args:
-    #   #   # Tells the host where to load app1's remoteEntry.js at runtime
-    #   #   REMOTE_APP1_URL: "http://localhost:4000"
-    image: rnavy/multi-app:multi-app-host
-    container_name: multi-app-host-main
+  # main-a (First Host Application Shell)
+  main-a-host:
+    build:
+      context: ./main-a
+      dockerfile: Dockerfile
+      args:
+        # Tells the host where to load app1's remoteEntry.js at runtime
+        - REMOTE_APP1_URL=http://localhost:4000
+    container_name: multi-app-host-main-a
     ports:
       - "3000:3000"
     depends_on:
@@ -53,7 +48,30 @@ services:
     environment:
       - PORT=3000
       - ROOT_URL=http://localhost:3000
-      - MONGO_URL=mongodb://mongodb:27017/shared-db
+      - MONGO_URL=mongodb://mongodb:27017/main-a-db
+      # Configures DDP to connect to the app-1 container backend
+      - METEOR_SETTINGS={"public":{"app1ServerUrl":"http://localhost:4000"}}
+    networks:
+      - multi-app-network
+
+  # main-b (Second Host Application Shell)
+  main-b-host:
+    build:
+      context: ./main-b
+      dockerfile: Dockerfile
+      args:
+        # Tells the host where to load app1's remoteEntry.js at runtime
+        - REMOTE_APP1_URL=http://localhost:4000
+    container_name: multi-app-host-main-b
+    ports:
+      - "3001:3000"
+    depends_on:
+      - mongodb
+      - app1-remote
+    environment:
+      - PORT=3000
+      - ROOT_URL=http://localhost:3001
+      - MONGO_URL=mongodb://mongodb:27017/main-b-db
       # Configures DDP to connect to the app-1 container backend
       - METEOR_SETTINGS={"public":{"app1ServerUrl":"http://localhost:4000"}}
     networks:

@@ -35,6 +35,7 @@
 import "/imports/api";
 import { Meteor } from "meteor/meteor";
 import { Accounts } from "meteor/accounts-base";
+import "./verify-token.js";
 
 Meteor.startup(async () => {
   const userCount = await Meteor.users.find().countAsync();

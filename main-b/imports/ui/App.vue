@@ -41,7 +41,7 @@ const handleLogout = () => {
   >
     <div class="text-center">
       <svg
-        class="animate-spin h-8 w-8 text-purple-500 mx-auto mb-4"
+        class="animate-spin h-8 w-8 text-green-500 mx-auto mb-4"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -60,7 +60,7 @@ const handleLogout = () => {
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-      <span class="text-slate-400 font-medium">Verifying Session...</span>
+      <span class="text-slate-400 font-medium">Verifying Session B...</span>
     </div>
   </div>
 
@@ -73,13 +73,14 @@ const handleLogout = () => {
       class="max-w-7xl mx-auto flex justify-between items-center pb-6 mb-8 border-b border-slate-800"
     >
       <div class="flex items-center gap-6">
+        <h1 class="text-xl font-black text-green-400 tracking-wider">Host Application B (Port 3001)</h1>
         <AppMenu />
       </div>
       <div
         class="flex items-center gap-4 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50"
       >
         <span class="text-sm font-semibold text-slate-300">
-          User: <span class="text-purple-400 font-bold">{{ username }}</span>
+          User: <span class="text-green-400 font-bold">{{ username }}</span>
         </span>
         <button
           @click="handleLogout"

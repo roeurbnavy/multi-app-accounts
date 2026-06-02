@@ -1,8 +1,8 @@
 {
-  "name": "my-app-meteor-3.3",
+  "name": "main-b",
   "private": true,
   "scripts": {
-    "start": "MONGO_URL='mongodb://localhost:27017/app1-db' RSPACK_DEVSERVER_PORT=8081 meteor run --port 4000",
+    "start": "MONGO_URL='mongodb://localhost:27017/main-b-db' RSPACK_DEVSERVER_PORT=8082 meteor run --port 3001",
     "build": "meteor build ../output/vue --directory",
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
@@ -10,26 +10,24 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.23.5",
-    "@swc/helpers": "^0.5.20",
-    "https": "^1.0.0",
+    "@swc/helpers": "^0.5.17",
     "meteor-node-stubs": "^1.2.12",
     "vue": "^3.3.9",
     "vue-meteor-tracker": "^3.0.0-beta.7",
-    "vue-router": "^4.2.5",
-    "vuex": "^4.1.0"
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
-    "@meteorjs/rspack": "^1.0.1",
+    "@meteorjs/rspack": "^1.0.0",
     "@module-federation/enhanced": "^2.5.0",
-    "@rsdoctor/rspack-plugin": "^1.5.5",
-    "@rspack/cli": "^1.7.10",
-    "@rspack/core": "^1.7.10",
+    "@rsdoctor/rspack-plugin": "^1.2.3",
+    "@rspack/cli": "^1.7.1",
+    "@rspack/core": "^1.7.1",
+    "@tailwindcss/postcss": "^4.1.12",
     "@types/meteor": "^2.9.7",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
-    "postcss-loader": "^8.2.1",
-    "rspack-vue-loader": "^17.5.0",
-    "tailwindcss": "^3.3.5"
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.1.1",
+    "tailwindcss": "^4.1.12",
+    "vue-loader": "^17.4.2"
   },
   "meteor": {
     "modern": true,

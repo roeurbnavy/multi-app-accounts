@@ -21,12 +21,11 @@ export function getRemoteConnection(remoteName, defaultPort) {
   ) {
     return Meteor;
   }
-  console.log("Meteor.settings.public", Meteor.settings.public);
+
   if (!connections[remoteName]) {
     const remoteUrl =
       Meteor.settings.public?.[`${remoteName}ServerUrl`] ||
       `http://localhost:${defaultPort}`;
-    console.log("remoteUrl", remoteUrl);
     const conn = DDP.connect(remoteUrl);
     connections[remoteName] = conn;
 
