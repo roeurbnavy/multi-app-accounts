@@ -1,10 +1,16 @@
+<script setup>
+import { isRemoteLoaded } from "../router.js";
+</script>
+
 <template>
   <nav class="flex items-center">
     <router-link :to="{ name: 'home' }" class="mr-4 text-green-700 hover:underline">Home</router-link>
     <router-link :to="{ name: 'about' }" class="mr-4 text-green-700 hover:underline">About</router-link>
-    <router-link :to="{ name: 'remote-home' }" class="mr-4 text-blue-700 hover:underline">Remote Home</router-link>
-    <router-link :to="{ name: 'remote-about' }" class="mr-4 text-blue-700 hover:underline">Remote About</router-link>
-    <router-link :to="{ name: 'remote-federation' }" class="mr-4 text-blue-700 hover:underline">Remote Federation</router-link>
-    <router-link :to="{ name: 'remote-todos' }" class="mr-4 text-blue-700 hover:underline">Remote Todo List</router-link>
+    <template v-if="isRemoteLoaded">
+      <router-link :to="{ name: 'remote-home' }" class="mr-4 text-blue-700 hover:underline">Remote Home</router-link>
+      <router-link :to="{ name: 'remote-about' }" class="mr-4 text-blue-700 hover:underline">Remote About</router-link>
+      <router-link :to="{ name: 'remote-federation' }" class="mr-4 text-blue-700 hover:underline">Remote Federation</router-link>
+      <router-link :to="{ name: 'remote-todos' }" class="mr-4 text-blue-700 hover:underline">Remote Todo List</router-link>
+    </template>
   </nav>
 </template>
